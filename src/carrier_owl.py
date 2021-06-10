@@ -167,8 +167,7 @@ def main():
     slack_id1 = os.getenv("SLACK_ID1") or args.slack_id
     slack_ids = [slack_id, slack_id1]
     for yaml_path, slack_id in yaml_paths, slack_ids:
-        args = parser.parse_args(yaml_path)
-        config = get_config()
+        config = get_config(yaml_path)
         subject = config['subject']
         keywords = config['keywords']
         score_threshold = float(config['score_threshold'])
