@@ -164,9 +164,9 @@ def main():
     
     yaml_paths = ["config.yaml", "config_qa_summarize.yaml"]
     slack_id = os.getenv("SLACK_ID") or args.slack_id
-    slack_id1 = os.getenv("SLACK_ID1") or args.slack_id
+    slack_id1 = os.getenv("SLACK_ID1") or args.slack_id1
     slack_ids = [slack_id, slack_id1]
-    for yaml_path, slack_id in yaml_paths, slack_ids:
+    for yaml_path, slack_id in zip(yaml_paths, slack_ids):
         config = get_config(yaml_path)
         subject = config['subject']
         keywords = config['keywords']
