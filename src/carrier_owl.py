@@ -64,12 +64,11 @@ def search_keyword(
     return results
 
 
-def send2app(text: str, slack_ids: list, line_token: str) :
+def send2app(text: str, slack_id: str, line_token: str):
     # slack
-    if slack_ids is not None:
-        for slack id in slack_ids:
-            slack = slackweb.Slack(url=slack_id)
-            slack.notify(text=text)
+    if slack_id is not None:
+        slack = slackweb.Slack(url=slack_id)
+        slack.notify(text=text)
 
     # line
     if line_token is not None:
@@ -103,7 +102,6 @@ def notify(results: list, slack_id: str, line_token: str):
                f'\n {star}'
 
         send2app(text, slack_id, line_token)
-
 
 def get_translated_text(from_lang: str, to_lang: str, from_text: str):
     '''
@@ -147,10 +145,10 @@ def get_text_from_page_source(html: str):
     text = target_elem.text
     return text
 
-def get_config():
+def get_config(yaml_path):
     file_abs_path = os.path.abspath(__file__)
     file_dir = os.path.dirname(file_abs_path)
-    config_path = f'{file_dir}/../config.yaml'
+    config_path = f'{file_dir}/../{yaml_path}'
     with open(config_path, 'r') as yml:
         config = yaml.load(yml)
     return config
@@ -163,29 +161,31 @@ def main():
     parser.add_argument('--slack_id1', default=None)
     parser.add_argument('--line_token', default=None)
     args = parser.parse_args()
-
-    config = get_config()
-    subject = config['subject']
-    keywords = config['keywords']
-    score_threshold = float(config['score_threshold'])
-
-    day_before_yesterday = datetime.datetime.today() - datetime.timedelta(days=2)
-    day_before_yesterday_str = day_before_yesterday.strftime('%Y%m%d')
-    # datetime format YYYYMMDDHHMMSS
-    arxiv_query = f'({subject}) AND ' \
-                  f'submittedDate:' \
-                  f'[{day_before_yesterday_str}000000 TO {day_before_yesterday_str}235959]'
-    articles = arxiv.query(query=arxiv_query,
-                           max_results=1000,
-                           sort_by='submittedDate',
-                           iterative=False)
-    results = search_keyword(articles, keywords, score_threshold)
-
+    
+    yaml_paths = ["config.yaml", "config_qa_summarize.yaml"]
     slack_id = os.getenv("SLACK_ID") or args.slack_id
     slack_id1 = os.getenv("SLACK_ID1") or args.slack_id
     slack_ids = [slack_id, slack_id1]
-    line_token = os.getenv("LINE_TOKEN") or args.line_token
-    notify(results, slack_ids, line_token)
+    for yaml_path, slack_id in yaml_paths, slack_ids:
+        args = parser.parse_args(yaml_path)
+        config = get_config()
+        subject = config['subject']
+        keywords = config['keywords']
+        score_threshold = float(config['score_threshold'])
+
+        day_before_yesterday = datetime.datetime.today() - datetime.timedelta(days=2)
+        day_before_yesterday_str = day_before_yesterday.strftime('%Y%m%d')
+        # datetime format YYYYMMDDHHMMSS
+        arxiv_query = f'({subject}) AND ' \
+                  f'submittedDate:' \
+                  f'[{day_before_yesterday_str}000000 TO {day_before_yesterday_str}235959]'
+        articles = arxiv.query(query=arxiv_query,
+                           max_results=1000,
+                           sort_by='submittedDate',
+                           iterative=False)
+        results = search_keyword(articles, keywords, score_threshold)
+        line_token = os.getenv("LINE_TOKEN") or args.line_token
+        notify(results, slack_id, line_token)
 
 
 if __name__ == "__main__":
