@@ -27,8 +27,9 @@ class Result:
     title: str
     abstract: str
     words: list
-    score: float = 0.0
     summary: str
+    score: float = 0.0
+    
 
 
 def calc_score(abst: str, keywords: dict) -> (float, list):
