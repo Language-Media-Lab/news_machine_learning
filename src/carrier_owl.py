@@ -14,6 +14,7 @@ import yaml
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from transformers import AutoTokenizer, TFAutoModelForSeq2SeqLM, pipeline
 from webdriver_manager.chrome import ChromeDriverManager
 
 # setting
@@ -27,6 +28,7 @@ class Result:
     abstract: str
     words: list
     score: float = 0.0
+    summary: str
 
 
 def calc_score(abst: str, keywords: dict) -> (float, list):
@@ -40,10 +42,7 @@ def calc_score(abst: str, keywords: dict) -> (float, list):
             hit_kwd_list.append(word)
     return sum_score, hit_kwd_list
 
-
-def search_keyword(
-        articles: list, keywords: dict, score_threshold: float
-        ):
+def search_keyword(articles: list, keywords: dict, score_threshold: float, pipeline):
     results = []
 
     for article in articles:
@@ -57,9 +56,10 @@ def search_keyword(
             abstract_trans = get_translated_text('ja', 'en', abstract)
             abstract_trans = textwrap.wrap(abstract_trans, 40)  # 40行で改行
             abstract_trans = '\n'.join(abstract_trans)
+            summarised_abstract = pipeline(abstract_trans)
             result = Result(
                     url=url, title=title_trans, abstract=abstract_trans,
-                    score=score, words=hit_keywords)
+                    score=score, words=hit_keywords, summary=summarised_abstract)
             results.append(result)
     return results
 
@@ -153,9 +153,12 @@ def get_config(yaml_path):
         config = yaml.load(yml)
     return config
 
-
 def main():
     # debug用
+    tokenizer = AutoTokenizer.from_pretrained("elyza/mt5-base-summarization-livedoor", use_auth_token=True)
+    model = TFAutoModelForSeq2SeqLM.from_pretrained("elyza/mt5-base-summarization-livedoor", use_auth_token=True)
+    pipeline = pipeline('text2text-generation', model=model, tokenizer=tokenizer)
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--slack_id', default=None)
     parser.add_argument('--slack_id1', default=None)
@@ -182,7 +185,7 @@ def main():
                            max_results=1000,
                            sort_by='submittedDate',
                            iterative=False)
-        results = search_keyword(articles, keywords, score_threshold)
+        results = search_keyword(articles, keywords, score_threshold, pipeline)
         line_token = os.getenv("LINE_TOKEN") or args.line_token
         notify(results, slack_id, line_token)
 
