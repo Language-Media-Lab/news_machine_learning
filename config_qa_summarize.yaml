@@ -1,0 +1,13 @@
+
+# arxivの学問領域の指定
+subject: 'cat:cs.*'
+
+# 検索キーワード
+keywords:
+        QA : 1
+        summarization: 1
+        question answering: 1
+        pegasus: 1
+
+# 通知の閾値
+score_threshold: 1
