@@ -15,7 +15,10 @@ keywords:
         fine-tuning: 1
         pre-training: 1
         calibration: 1
-        dialog: 1
+        dialog: 2
+        summarization:2
+        QA: 2
+        
 
 # 通知の閾値
 score_threshold: 2
