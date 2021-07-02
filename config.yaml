@@ -18,6 +18,7 @@ keywords:
         dialog: 2
         summarization: 2
         QA: 2
+        social bias: 2
         
 
 # 通知の閾値
